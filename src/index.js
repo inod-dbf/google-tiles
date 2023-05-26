@@ -29,7 +29,7 @@ group.add(camera);
 
 const stats = initStats(domContainer);
 const renderer = initRenderer(camera, domContainer);
-const ogc3DTiles = initTileset(scene, 0.3);
+const ogc3DTiles = initTileset(scene, 0.9);
 
 group.add(ogc3DTiles);
 
@@ -334,9 +334,74 @@ function onDocumentMouseMove(event) {
     mouseY = event.clientY - window.innerHeight / 2;
 }
 
+function transformWGS84ToCartesian(lon, lat, h, sfct) {
+    const a = 6378.137;
+    const e = 0.006694384442042;
+    const N = a / Math.sqrt(1.0 - e * Math.pow(Math.sin(lat), 2));
+    const cosLat = Math.cos(lat);
+    const cosLon = Math.cos(lon);
+    const sinLat = Math.sin(lat);
+    const sinLon = Math.sin(lon);
+    const nPh = N + h;
+    const x = nPh * cosLat * cosLon;
+    const y = nPh * cosLat * sinLon;
+    const z = (0.993305615557957 * N + h) * sinLat;
+
+    // sfct.set(x, y, z);
+    return [x, y, z];
+}
+function convertLatLongToXYZ(latitude, longitude, radius) {
+    var latRad = (latitude * Math.PI) / 180;
+    var longRad = (longitude * Math.PI) / 180;
+
+    var x = radius * Math.cos(latRad) * Math.cos(longRad);
+    var y = radius * Math.sin(latRad);
+    var z = radius * Math.cos(latRad) * Math.sin(longRad);
+
+    return [x, y, z];
+}
+
+function calcPosFromLatLonRad(lat, lon, radius) {
+    var phi = (90 - lat) * (Math.PI / 180);
+    var theta = (lon + 180) * (Math.PI / 180);
+
+    const x = -(radius * Math.sin(phi) * Math.cos(theta));
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    const y = radius * Math.cos(phi);
+
+    return [x, y, z];
+}
+
 function initCamera(width, height) {
     const camera = new THREE.PerspectiveCamera(70, width / height, 0.001, 3000);
-    //camera.position.set(3973.55, 4973.8, 3.2851604304346775);
+    // camera.position.set(3973.55, 4973.8, 3.2851604304346775);
+
+    const [x, y, z] = calcPosFromLatLonRad(
+        35.171008325728835,
+        136.88754440134835,
+        6378.137
+    );
+    // const [x, y, z] = calcPosFromLatLonRad(
+    //     35.670856284576125,
+    //     139.73095527276814,
+    //     6378.137
+    // );
+    // const [x, y, z] = calcPosFromLatLonRad(
+    //     34.93070398073656,
+    //     136.9963433642497,
+    //     6378.137
+    // );
+    // const [x, y, z] = convertLatLongToXYZ(
+    //     35.625445678544715,
+    //     140.0987606112061,
+    //     6378.137
+    // );
+
+    // const [x, y, z] = transformWGS84ToCartesian(2.38598977, 0.610865238, 0);
+    console.log("[iw] x, y, z ---> ", x, y, z);
+    console.log("[iw] x2, y2, z2 ---> ", x - 4.4, y - 20.4, z - 3.9);
+    camera.position.set(x - 4.4, y - 20.4, z - 3.9);
+    // camera.position.set(x, y, z);
 
     // SITE 1 - NAGOYA - OFFICE
     // camera.position.set(
@@ -354,17 +419,17 @@ function initCamera(width, height) {
 
     // SITE 3 - NAGOYA - HOSPITAL
     // camera.position.set(
-    //     -3828.4084927362696,
-    //     3631.657524726205,
-    //     -3570.4552917806614
+    //     -3828.422657524066,
+    //     3631.7119148263528,
+    //     -3570.4664254297645
     // );
 
     // SITE 4 - CHIBA - OFFICE
-    camera.position.set(
-        -3981.9043878937114,
-        3694.607218088955,
-        -3329.5067733461237
-    );
+    // camera.position.set(
+    //     -3981.9043878937114,
+    //     3694.607218088955,
+    //     -3329.5067733461237
+    // );
     //camera.up.set(0, 1, 0);
 
     camera.lookAt(0, 0, 0);
